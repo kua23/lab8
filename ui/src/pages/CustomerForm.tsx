@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
-import { Customer } from '../types';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router'; // Fix import from react-router to react-router-dom
+import { Customer, CustomerName } from '../types/types';
 import PersonalInfoStep from '../components/form-steps/PersonalInfoStep';
 import AddressStep from '../components/form-steps/AddressStep';
 import IdentityDocumentsStep from '../components/form-steps/IdentityDocumentsStep';
 import IdentityProofsStep from '../components/form-steps/IdentityProofsStep';
+import ContactDetailsStep from '../components/form-steps/ContactDetailsStep';
 
-// Initialize empty customer
+// Initialize empty customer with proper structure
 const initialCustomer: Customer = {
-  name: '',
+  name: { firstName: '', middleName: '', lastName: '' },
   dateOfBirth: '',
   address: {
     street: '',
@@ -19,6 +20,7 @@ const initialCustomer: Customer = {
   },
   identityDocuments: [],
   identityProofs: []
+  // contactDetails is optional in the type definition
 };
 
 const CustomerForm = () => {
@@ -26,18 +28,42 @@ const CustomerForm = () => {
   const location = useLocation();
   const [step, setStep] = useState(1);
   const [customer, setCustomer] = useState<Customer>(initialCustomer);
-  const totalSteps = 4;
+  const totalSteps = 5;
+  const processedStateRef = useRef<any>(null);
   
   useEffect(() => {
-    // Check if we're returning from preview with edits
-    if (location.state?.customerData && location.state?.editMode) {
-      setCustomer(location.state.customerData);
-      // Optionally set step if specified
+    // Check if we're returning from preview with edits AND the state is different
+    if (
+      location.state?.customerData && 
+      location.state?.editMode &&
+      JSON.stringify(processedStateRef.current) !== JSON.stringify(location.state)
+    ) {
+      // Store current state to avoid reprocessing
+      processedStateRef.current = location.state;
+      
+      // Ensure the customer data has the correct structure
+      const customerData: Customer = location.state.customerData;
+      
+      // If name is a string, convert it to CustomerName object
+      if (typeof customerData.name === 'string') {
+        // Split the name string into parts
+        const nameParts = customerData.name.trim().split(/\s+/);
+        
+        // Create a CustomerName object
+        customerData.name = {
+          firstName: nameParts[0] || '',
+          middleName: nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '',
+          lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
+        };
+      }
+      
+      setCustomer(customerData);
+      
       if (location.state.step) {
         setStep(location.state.step);
       }
     }
-  }, [location.state]);
+  }, [location]);
   
   const updateCustomer = (data: Partial<Customer>) => {
     setCustomer(prev => ({
@@ -74,7 +100,7 @@ const CustomerForm = () => {
         Create New Customer
       </h1>
       
-      {/* Progress Bar */}
+      {/* Progress Bar - Updated to show 5 steps */}
       <div className="mb-10">
         <div className="flex justify-between mb-2">
           {[...Array(totalSteps)].map((_, i) => (
@@ -93,7 +119,8 @@ const CustomerForm = () => {
               <span className="text-xs mt-1 text-gray-400">
                 {i === 0 ? 'Personal' : 
                  i === 1 ? 'Address' : 
-                 i === 2 ? 'Documents' : 'Proofs'}
+                 i === 2 ? 'Contact' : 
+                 i === 3 ? 'Documents' : 'Proofs'}
               </span>
             </div>
           ))}
@@ -110,7 +137,12 @@ const CustomerForm = () => {
       <div className="bg-dark-light rounded-lg shadow-lg p-6">
         {step === 1 && (
           <PersonalInfoStep
-            data={{ name: customer.name, dateOfBirth: customer.dateOfBirth }}
+            data={{ 
+              name: (typeof customer.name === 'string') 
+                ? { firstName: customer.name, middleName: '', lastName: '' } 
+                : customer.name as CustomerName, 
+              dateOfBirth: customer.dateOfBirth 
+            }}
             onUpdate={(data) => updateCustomer(data)}
           />
         )}
@@ -123,13 +155,20 @@ const CustomerForm = () => {
         )}
         
         {step === 3 && (
+          <ContactDetailsStep
+            contactDetails={customer.contactDetails}
+            onUpdate={(contactDetails) => updateCustomer({ contactDetails })}
+          />
+        )}
+        
+        {step === 4 && (
           <IdentityDocumentsStep
             documents={customer.identityDocuments}
             onUpdate={(identityDocuments) => updateCustomer({ identityDocuments })}
           />
         )}
         
-        {step === 4 && (
+        {step === 5 && (
           <IdentityProofsStep
             proofs={customer.identityProofs}
             onUpdate={(identityProofs) => updateCustomer({ identityProofs })}

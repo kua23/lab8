@@ -1,132 +1,187 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
+import { CustomerName } from '../../types/types';
 
-interface PersonalInfoProps {
+interface PersonalInfoStepProps {
   data: {
-    name: string;
+    name: CustomerName;
     dateOfBirth: string;
   };
-  onUpdate: (data: { name: string; dateOfBirth: string }) => void;
+  onUpdate: (data: {
+    name: CustomerName;
+    dateOfBirth: string;
+  }) => void;
 }
 
-const PersonalInfoStep = ({ data, onUpdate }: PersonalInfoProps) => {
-  const [name, setName] = useState(data.name);
-  const [dateOfBirth, setDateOfBirth] = useState(data.dateOfBirth);
-  const [errors, setErrors] = useState({
-    name: '',
-    dateOfBirth: ''
+const PersonalInfoStep = ({ data, onUpdate }: PersonalInfoStepProps) => {
+  const [formData, setFormData] = useState({
+    name: {
+      firstName: data.name?.firstName || '',
+      middleName: data.name?.middleName || '',
+      lastName: data.name?.lastName || '',
+    },
+    dateOfBirth: data.dateOfBirth || '',
   });
   
-  // Add a ref to track if we're updating from parent data
-  const isUpdatingFromProps = useRef(false);
+  const [errors, setErrors] = useState({
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+  });
   
-  // Update values when props change
-  useEffect(() => {
-    isUpdatingFromProps.current = true;
-    setName(data.name);
-    setDateOfBirth(data.dateOfBirth);
-    // Use a timeout to reset the flag after the state updates have been processed
-    setTimeout(() => {
-      isUpdatingFromProps.current = false;
-    }, 0);
-  }, [data]);
-
-  // Validate values without setting state
-  const validateValues = () => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    let newFormData = {...formData};
+    
+    if (name === 'firstName' || name === 'middleName' || name === 'lastName') {
+      newFormData = {
+        ...formData,
+        name: {
+          ...formData.name,
+          [name]: value
+        }
+      };
+      
+      if (name === 'firstName' || name === 'lastName') {
+        setErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
+    } else {
+      newFormData = {
+        ...formData,
+        [name]: value
+      };
+      
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+    
+    setFormData(newFormData);
+    
+    // Call parent update if form is valid
+    if (isValid(newFormData)) {
+      onUpdate(newFormData);
+    }
+  };
+  
+  const isValid = (data: typeof formData) => {
+    return (
+      data.name.firstName.trim() !== '' &&
+      data.name.lastName.trim() !== '' &&
+      data.dateOfBirth.trim() !== ''
+    );
+  };
+  
+  const validate = () => {
     const newErrors = {
-      name: '',
-      dateOfBirth: ''
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
     };
     
-    if (!name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.name.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
     }
     
-    if (!dateOfBirth) {
+    if (!formData.name.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    
+    if (!formData.dateOfBirth) {
       newErrors.dateOfBirth = 'Date of birth is required';
     } else {
-      // Check if the person is at least 18 years old
-      const birthDate = new Date(dateOfBirth);
+      const selectedDate = new Date(formData.dateOfBirth);
       const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      
-      if (age < 18) {
-        newErrors.dateOfBirth = 'Customer must be at least 18 years old';
+      if (selectedDate > today) {
+        newErrors.dateOfBirth = 'Date of birth cannot be in the future';
       }
     }
-
-    return newErrors;
-  };
-
-  // Notify parent only when values have changed and are valid
-  useEffect(() => {
-    // Skip if we're currently updating from props to avoid the infinite loop
-    if (isUpdatingFromProps.current) return;
-    
-    const newErrors = validateValues();
-    const formIsValid = !Object.values(newErrors).some(error => error);
     
     setErrors(newErrors);
     
-    // Only update parent if form is valid and there's actual data
-    if (formIsValid && name && dateOfBirth) {
-      // Check if data has actually changed before calling onUpdate
-      if (name !== data.name || dateOfBirth !== data.dateOfBirth) {
-        onUpdate({ name, dateOfBirth });
-      }
-    }
-  }, [name, dateOfBirth, onUpdate]); // Remove data from dependencies
-
-  // Handle blur events to validate as user moves between fields
-  const handleBlur = (field: 'name' | 'dateOfBirth') => {
-    const newErrors = validateValues();
-    setErrors(prev => ({
-      ...prev,
-      [field]: newErrors[field]
-    }));
-  };
-
-  // Handle changes in fields
-  const handleChange = (field: 'name' | 'dateOfBirth', value: string) => {
-    if (field === 'name') {
-      setName(value);
-    } else {
-      setDateOfBirth(value);
+    const isFormValid = !Object.values(newErrors).some(error => error !== '');
+    if (isFormValid) {
+      onUpdate(formData);
     }
     
-    // Don't clear errors immediately - they'll be recalculated in the useEffect
+    return isFormValid;
   };
-
+  
+  const handleBlur = () => {
+    validate();
+  };
+  
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-6 text-primary">Personal Information</h2>
       
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            onBlur={() => handleBlur('name')}
-            className="form-input"
-            placeholder="Enter full name"
-          />
-          {errors.name && (
-            <p className="text-red-400 text-sm mt-1">{errors.name}</p>
-          )}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              First Name*
+            </label>
+            <input
+              type="text"
+              name="firstName"
+              value={formData.name.firstName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="form-input"
+              placeholder="Enter first name"
+            />
+            {errors.firstName && (
+              <p className="text-red-400 text-sm mt-1">{errors.firstName}</p>
+            )}
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Middle Name
+            </label>
+            <input
+              type="text"
+              name="middleName"
+              value={formData.name.middleName}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="Enter middle name (optional)"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Last Name*
+            </label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.name.lastName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="form-input"
+              placeholder="Enter last name"
+            />
+            {errors.lastName && (
+              <p className="text-red-400 text-sm mt-1">{errors.lastName}</p>
+            )}
+          </div>
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Date of Birth
+            Date of Birth*
           </label>
           <input
             type="date"
-            value={dateOfBirth}
-            onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-            onBlur={() => handleBlur('dateOfBirth')}
+            name="dateOfBirth"
+            value={formData.dateOfBirth}
+            onChange={handleChange}
+            onBlur={handleBlur}
             className="form-input"
           />
           {errors.dateOfBirth && (

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { IdentityDocument } from '../../types';
+import { useState } from 'react';
+import { IdentityDocument } from '../../types/types';
 
 interface IdentityDocumentsStepProps {
   documents: IdentityDocument[];
@@ -8,7 +8,7 @@ interface IdentityDocumentsStepProps {
 
 const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepProps) => {
   const [documentsList, setDocumentsList] = useState<IdentityDocument[]>(
-    documents.length > 0 ? documents : [{ 
+    documents.length > 0 ? [...documents] : [{ 
       type: '', 
       number: '', 
       issuingAuthority: '', 
@@ -19,29 +19,12 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
   
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>({});
 
-  // Auto-update parent component when valid documents change
-  useEffect(() => {
-    // Only update if at least one document is complete
-    const hasCompleteDocument = documentsList.some(
-      doc => doc.type && doc.number && doc.issuingAuthority && doc.issueDate && doc.expiryDate
-    );
-    
-    if (hasCompleteDocument && validate()) {
-      // Only call onUpdate if the documents have actually changed
-      const hasChanged = JSON.stringify(documentsList) !== JSON.stringify(documents);
-      if (hasChanged) {
-        onUpdate(documentsList);
-      }
-    }
-  }, [documentsList, documents]); // Add documents to the dependency array
-
   const handleChange = (index: number, field: keyof IdentityDocument, value: string) => {
     const updatedDocuments = [...documentsList];
     updatedDocuments[index] = {
       ...updatedDocuments[index],
       [field]: value
     };
-    setDocumentsList(updatedDocuments);
     
     // Clear error when user types
     if (errors[index]?.[field]) {
@@ -49,27 +32,35 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
       updatedErrors[index] = { ...updatedErrors[index], [field]: '' };
       setErrors(updatedErrors);
     }
+    
+    setDocumentsList(updatedDocuments);
+    
+    // Only send valid data to parent
+    const isValid = validateDocument(updatedDocuments[index]);
+    if (Object.keys(isValid).length === 0) {
+      onUpdate(updatedDocuments);
+    }
   };
 
   const addDocument = () => {
-    setDocumentsList([
+    const newDocuments = [
       ...documentsList, 
       { type: '', number: '', issuingAuthority: '', issueDate: '', expiryDate: '' }
-    ]);
+    ];
+    setDocumentsList(newDocuments);
   };
 
   const removeDocument = (index: number) => {
     const updatedDocuments = [...documentsList];
     updatedDocuments.splice(index, 1);
-    setDocumentsList(updatedDocuments);
     
     // Remove errors for this index
     const updatedErrors = { ...errors };
     delete updatedErrors[index];
     setErrors(updatedErrors);
-
-    // Remove this direct update call - let useEffect handle it
-    // onUpdate(updatedDocuments);
+    
+    setDocumentsList(updatedDocuments);
+    onUpdate(updatedDocuments);
   };
 
   const validateDocument = (document: IdentityDocument) => {
@@ -94,21 +85,23 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
     return documentErrors;
   };
 
-  const validate = () => {
-    const newErrors: Record<number, Record<string, string>> = {};
-    let hasErrors = false;
+  const validate = (index: number) => {
+    const documentErrors = validateDocument(documentsList[index]);
     
-    documentsList.forEach((document, index) => {
-      const documentErrors = validateDocument(document);
-      
-      if (Object.keys(documentErrors).length > 0) {
-        newErrors[index] = documentErrors;
-        hasErrors = true;
-      }
-    });
+    if (Object.keys(documentErrors).length > 0) {
+      const newErrors = { ...errors };
+      newErrors[index] = documentErrors;
+      setErrors(newErrors);
+      return false;
+    }
     
-    setErrors(newErrors);
-    return !hasErrors;
+    return true;
+  };
+  
+  const handleBlur = (index: number) => {
+    if (validate(index)) {
+      onUpdate(documentsList);
+    }
   };
 
   return (
@@ -145,6 +138,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
                 type="text"
                 value={document.type}
                 onChange={(e) => handleChange(index, 'type', e.target.value)}
+                onBlur={() => handleBlur(index)}
                 className="form-input"
                 placeholder="Passport, Driver's License, etc."
               />
@@ -161,6 +155,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
                 type="text"
                 value={document.number}
                 onChange={(e) => handleChange(index, 'number', e.target.value)}
+                onBlur={() => handleBlur(index)}
                 className="form-input"
                 placeholder="Document number"
               />
@@ -177,6 +172,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
                 type="text"
                 value={document.issuingAuthority}
                 onChange={(e) => handleChange(index, 'issuingAuthority', e.target.value)}
+                onBlur={() => handleBlur(index)}
                 className="form-input"
                 placeholder="Authority that issued this document"
               />
@@ -194,6 +190,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
                   type="date"
                   value={document.issueDate}
                   onChange={(e) => handleChange(index, 'issueDate', e.target.value)}
+                  onBlur={() => handleBlur(index)}
                   className="form-input"
                 />
                 {errors[index]?.issueDate && (
@@ -209,6 +206,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
                   type="date"
                   value={document.expiryDate}
                   onChange={(e) => handleChange(index, 'expiryDate', e.target.value)}
+                  onBlur={() => handleBlur(index)}
                   className="form-input"
                 />
                 {errors[index]?.expiryDate && (
