@@ -1,11 +1,13 @@
-import { StrictMode } from "react";
-import ReactDOM from "react-dom/client";
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import { RouterProvider } from 'react-router'
+import router from './router.tsx'
+import { Toaster } from 'react-hot-toast'
 
-import App from "./App.tsx";
-import "./index.css";
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
-  </StrictMode>
-);
+    <RouterProvider router={router} />
+    <Toaster position="top-right" />
+  </StrictMode>,
+)

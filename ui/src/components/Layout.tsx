@@ -1,49 +1,26 @@
-import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
-import Navbar from "./ui/Navbar";
-import { Home, Users, Plus } from "lucide-react";
+import { Link, Outlet } from 'react-router';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const location = useLocation();
-  const [currentPath, setCurrentPath] = useState(location.pathname);
-
-  useEffect(() => {
-    setCurrentPath(location.pathname);
-  }, [location]);
-
-  const navItems = [
-    {
-      label: "Home",
-      href: "/",
-      icon: <Home className="w-4 h-4" />,
-      isActive: currentPath === "/",
-    },
-    {
-      label: "Customers",
-      href: "/customers",
-      icon: <Users className="w-4 h-4" />,
-      isActive: currentPath.includes("/customers"),
-    },
-  ];
-
-  const actions = (
-    <Link
-      to="/customers/create"
-      className="flex items-center px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 hover:bg-primary-100 rounded-md text-sm font-medium transition-colors"
-    >
-      <Plus className="w-4 h-4 mr-1" />
-      New Customer
-    </Link>
-  );
-
+const Layout = () => {
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar items={navItems} actions={actions} />
-      <main className="container mx-auto px-4 py-6 max-w-6xl">{children}</main>
+    <div className="min-h-screen bg-dark text-white">
+      {/* Header */}
+      <header className="bg-dark-dark shadow-md">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <Link to="/" className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+            Customer Portal
+          </Link>
+          <nav className="flex gap-6">
+            <Link to="/" className="text-white hover:text-primary transition-colors">Home</Link>
+            <Link to="/customers/view" className="text-white hover:text-primary transition-colors">Customers</Link>
+            <Link to="/customers/create" className="text-white hover:text-primary transition-colors">New Customer</Link>
+          </nav>
+        </div>
+      </header>
+      
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <Outlet />
+      </main>
     </div>
   );
 };

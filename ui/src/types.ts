@@ -1,45 +1,37 @@
-export interface CustomerName {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-}
-
-export interface CustomerContactDetails {
-  type: string;
-  value: string;
-  dialCode?: string;
-}
-
-export interface CustomerAddress {
-  addressLine1: string;
-  addressLine2?: string;
+export interface Address {
+  street: string;
   city: string;
   state: string;
-  country: string;
   zipCode: string;
+  country: string;
 }
 
-export interface CustomerIdentityProof {
+export interface IdentityDocument {
   type: string;
-  value: string;
-  issuedDate: string;
+  number: string;
+  issuingAuthority: string;
+  issueDate: string;
   expiryDate: string;
 }
 
-export interface Customer {
-  id: number;
-  name: CustomerName;
-  dateOfBirth: string;
-  contactDetails: CustomerContactDetails[];
-  address: CustomerAddress;
-  identityProofs: CustomerIdentityProof[];
+export interface IdentityProof {
+  type: string;
+  documentNumber: string;
+  verificationStatus: "VERIFIED" | "PENDING" | "REJECTED";
 }
 
-export interface CustomerFormData {
-  currentStep: number;
-  name: CustomerName;
+export interface Customer {
+  id?: string;
+  name: string;
   dateOfBirth: string;
-  address: CustomerAddress;
-  contactDetails: CustomerContactDetails[];
-  identityProofs: CustomerIdentityProof[];
+  address: Address;
+  identityDocuments: IdentityDocument[];
+  identityProofs: IdentityProof[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FormState {
+  step: number;
+  customer: Customer;
 }
