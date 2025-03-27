@@ -109,12 +109,7 @@ const CustomerView = () => {
                 <p className="text-sm text-gray-400">Phone Number</p>
                 <p className="text-lg">{customer.contactDetails.phoneNumber}</p>
               </div>
-              {customer.contactDetails.alternatePhoneNumber && (
-                <div>
-                  <p className="text-sm text-gray-400">Alternate Phone</p>
-                  <p className="text-lg">{customer.contactDetails.alternatePhoneNumber}</p>
-                </div>
-              )}
+              {/* alternatePhoneNumber section removed as it doesn't exist in types.ts */}
               {customer.contactDetails.preferredContactMethod && (
                 <div>
                   <p className="text-sm text-gray-400">Preferred Contact Method</p>
@@ -139,10 +134,6 @@ const CustomerView = () => {
                   <div>
                     <p className="text-sm text-gray-400">Document Number</p>
                     <p className="text-lg">{doc.number}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Issuing Authority</p>
-                    <p className="text-lg">{doc.issuingAuthority}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-400">Issue Date</p>
@@ -173,16 +164,7 @@ const CustomerView = () => {
                     <p className="text-sm text-gray-400">Document Number</p>
                     <p className="text-lg">{proof.documentNumber}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Verification Status</p>
-                    <p className={`text-lg ${
-                      proof.verificationStatus === 'VERIFIED' ? 'text-green-500' : 
-                      proof.verificationStatus === 'REJECTED' ? 'text-red-500' : 
-                      'text-yellow-500'
-                    }`}>
-                      {proof.verificationStatus}
-                    </p>
-                  </div>
+                  {/* verificationStatus section removed as it doesn't exist in types.ts */}
                 </div>
               </div>
             ))}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { IdentityDocument } from '../../types/types';
 
 interface IdentityDocumentsStepProps {
@@ -6,15 +6,16 @@ interface IdentityDocumentsStepProps {
   onUpdate: (documents: IdentityDocument[]) => void;
 }
 
-const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepProps) => {
+const IdentityDocumentsStep: React.FC<IdentityDocumentsStepProps> = ({ documents, onUpdate }) => {
+  const emptyDocument: IdentityDocument = {
+    type: '',
+    number: '',
+    issueDate: '',
+    expiryDate: ''
+  };
+  
   const [documentsList, setDocumentsList] = useState<IdentityDocument[]>(
-    documents.length > 0 ? [...documents] : [{ 
-      type: '', 
-      number: '', 
-      issuingAuthority: '', 
-      issueDate: '', 
-      expiryDate: '' 
-    }]
+    documents.length > 0 ? [...documents] : [emptyDocument]
   );
   
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>({});
@@ -26,7 +27,6 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
       [field]: value
     };
     
-    // Clear error when user types
     if (errors[index]?.[field]) {
       const updatedErrors = { ...errors };
       updatedErrors[index] = { ...updatedErrors[index], [field]: '' };
@@ -34,45 +34,28 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
     }
     
     setDocumentsList(updatedDocuments);
-    
-    // Only send valid data to parent
-    const isValid = validateDocument(updatedDocuments[index]);
-    if (Object.keys(isValid).length === 0) {
-      onUpdate(updatedDocuments);
-    }
+    onUpdate(updatedDocuments);
   };
 
   const addDocument = () => {
-    const newDocuments = [
-      ...documentsList, 
-      { type: '', number: '', issuingAuthority: '', issueDate: '', expiryDate: '' }
-    ];
-    setDocumentsList(newDocuments);
+    setDocumentsList([...documentsList, {...emptyDocument}]);
   };
 
   const removeDocument = (index: number) => {
     const updatedDocuments = [...documentsList];
     updatedDocuments.splice(index, 1);
-    
-    // Remove errors for this index
-    const updatedErrors = { ...errors };
-    delete updatedErrors[index];
-    setErrors(updatedErrors);
-    
     setDocumentsList(updatedDocuments);
     onUpdate(updatedDocuments);
   };
 
-  const validateDocument = (document: IdentityDocument) => {
+  const validateDocument = (document: IdentityDocument, index: number) => {
     const documentErrors: Record<string, string> = {};
     
     if (!document.type.trim()) documentErrors.type = 'Document type is required';
     if (!document.number.trim()) documentErrors.number = 'Document number is required';
-    if (!document.issuingAuthority.trim()) documentErrors.issuingAuthority = 'Issuing authority is required';
     if (!document.issueDate) documentErrors.issueDate = 'Issue date is required';
     if (!document.expiryDate) documentErrors.expiryDate = 'Expiry date is required';
     
-    // Check if expiry date is after issue date
     if (document.issueDate && document.expiryDate) {
       const issueDate = new Date(document.issueDate);
       const expiryDate = new Date(document.expiryDate);
@@ -81,12 +64,6 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
         documentErrors.expiryDate = 'Expiry date must be after issue date';
       }
     }
-    
-    return documentErrors;
-  };
-
-  const validate = (index: number) => {
-    const documentErrors = validateDocument(documentsList[index]);
     
     if (Object.keys(documentErrors).length > 0) {
       const newErrors = { ...errors };
@@ -99,7 +76,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
   };
   
   const handleBlur = (index: number) => {
-    if (validate(index)) {
+    if (validateDocument(documentsList[index], index)) {
       onUpdate(documentsList);
     }
   };
@@ -108,14 +85,11 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
     <div>
       <h2 className="text-2xl font-semibold mb-6 text-primary">Identity Documents</h2>
       <p className="text-gray-400 mb-6">
-        Add one or more identity documents (passport, driver's license, etc.)
+        Add one or more identity documents
       </p>
       
       {documentsList.map((document, index) => (
-        <div 
-          key={index} 
-          className="mb-6 p-4 border border-gray-700 rounded-lg"
-        >
+        <div key={index} className="mb-6 p-4 border border-gray-700 rounded-lg">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Document #{index + 1}</h3>
             {documentsList.length > 1 && (
@@ -130,6 +104,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
           </div>
           
           <div className="space-y-4">
+            {/* Document Type */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Document Type
@@ -147,6 +122,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
               )}
             </div>
             
+            {/* Document Number */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Document Number
@@ -164,23 +140,7 @@ const IdentityDocumentsStep = ({ documents, onUpdate }: IdentityDocumentsStepPro
               )}
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Issuing Authority
-              </label>
-              <input
-                type="text"
-                value={document.issuingAuthority}
-                onChange={(e) => handleChange(index, 'issuingAuthority', e.target.value)}
-                onBlur={() => handleBlur(index)}
-                className="form-input"
-                placeholder="Authority that issued this document"
-              />
-              {errors[index]?.issuingAuthority && (
-                <p className="text-red-400 text-sm mt-1">{errors[index].issuingAuthority}</p>
-              )}
-            </div>
-            
+            {/* Dates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">

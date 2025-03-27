@@ -56,37 +56,47 @@ export const customerService = {
   
   create: async (customerData) => {
     try {
-      // Validate required fields before sending
-      if (!customerData.name) {
-        throw new Error('Customer name is required');
-      }
-      
-      // Log the exact data being sent
-      console.log('Sending customer data:', JSON.stringify(customerData, null, 2));
-      
-      // Make sure the customerData is properly formatted
+      // Format data to ensure it only contains fields from types.ts
       const formattedData = {
-        name: customerData.name,
-        email: customerData.email || '',
-        phone: customerData.phone || '',
-        // Add any other required fields with defaults
-        ...customerData
+        ...customerData,
+        identityDocuments: customerData.identityDocuments?.map(doc => ({
+          type: doc.type,
+          number: doc.number,
+          issueDate: doc.issueDate,
+          expiryDate: doc.expiryDate
+        })),
+        identityProofs: customerData.identityProofs?.map(proof => ({
+          type: proof.type,
+          documentNumber: proof.documentNumber
+        }))
       };
       
       const response = await apiClient.post('/customer', formattedData);
       return response.data;
     } catch (error) {
       console.error('Error creating customer:', error);
-      if (error.response) {
-        console.error('Server response:', error.response.status, error.response.data);
-      }
       throw error;
     }
   },
   
   update: async (id, customerData) => {
     try {
-      const response = await apiClient.put(`/customer/${id}`, customerData);
+      // Format data to match current types.ts
+      const formattedData = {
+        ...customerData,
+        identityDocuments: customerData.identityDocuments?.map(doc => ({
+          type: doc.type,
+          number: doc.number,
+          issueDate: doc.issueDate,
+          expiryDate: doc.expiryDate
+        })) || [],
+        identityProofs: customerData.identityProofs?.map(proof => ({
+          type: proof.type,
+          documentNumber: proof.documentNumber
+        })) || []
+      };
+      
+      const response = await apiClient.put(`/customer/${id}`, formattedData);
       return response.data;
     } catch (error) {
       console.error(`Error updating customer ${id}:`, error);

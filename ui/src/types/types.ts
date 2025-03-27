@@ -15,14 +15,12 @@ export interface Address {
 export interface CustomerContactDetails {
   email: string;
   phoneNumber: string;
-  alternatePhoneNumber?: string;
   preferredContactMethod?: 'EMAIL' | 'PHONE' | 'SMS';
 }
 
 export interface IdentityDocument {
   type: string;
   number: string;
-  issuingAuthority: string;
   issueDate: string;
   expiryDate: string;
 }
@@ -30,7 +28,6 @@ export interface IdentityDocument {
 export interface IdentityProof {
   type: string;
   documentNumber: string;
-  verificationStatus: 'VERIFIED' | 'PENDING' | 'REJECTED';
 }
 
 export interface Customer {

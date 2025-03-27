@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Customer } from '../types/types';
 
-// Sample data - in a real app, this would come from an API
+// Sample data - updated to match the current types.ts structure
 const sampleCustomers: Customer[] = [
   {
     id: 1,
@@ -23,7 +23,6 @@ const sampleCustomers: Customer[] = [
       {
         type: 'Passport',
         number: 'P12345678',
-        issuingAuthority: 'U.S. Department of State',
         issueDate: '2018-03-15',
         expiryDate: '2028-03-14'
       }
@@ -31,8 +30,7 @@ const sampleCustomers: Customer[] = [
     identityProofs: [
       {
         type: 'Social Security Number',
-        documentNumber: '123-45-6789',
-        verificationStatus: 'VERIFIED'
+        documentNumber: '123-45-6789'
       }
     ]
   },
@@ -55,7 +53,6 @@ const sampleCustomers: Customer[] = [
       {
         type: "Driver's License",
         number: 'DL98765432',
-        issuingAuthority: 'NY DMV',
         issueDate: '2019-10-12',
         expiryDate: '2027-10-11'
       }
@@ -63,8 +60,7 @@ const sampleCustomers: Customer[] = [
     identityProofs: [
       {
         type: 'Tax ID',
-        documentNumber: '87-6543210',
-        verificationStatus: 'PENDING'
+        documentNumber: '87-6543210'
       }
     ]
   }

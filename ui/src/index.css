@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
+
 body {
   margin: 0;
   min-width: 320px;
@@ -17,6 +18,10 @@ body {
     @apply w-full px-3 py-2 rounded-md border border-gray-700 bg-dark-light text-white focus:outline-none focus:ring-2 focus:ring-primary;
   }
 
+  .document-card, .proof-card {
+    @apply mb-6 p-4 border border-gray-700 rounded-lg transition-all duration-300 hover:border-gray-500;
+  }
+
   .btn,.btn-primary, .btn-secondary,.btn-outline {
     @apply px-6 py-2 rounded-lg font-medium transition-all duration-300;
   }
@@ -32,4 +37,37 @@ body {
   .btn-outline {
     @apply border border-gray-600 hover:bg-dark-light text-white;
   }
+  
+  .field-label {
+    @apply block text-sm font-medium text-gray-300 mb-1;
+  }
+  
+  .field-error {
+    @apply text-red-400 text-sm mt-1;
+  }
+  
+  .section-title {
+    @apply text-2xl font-semibold mb-6 text-primary;
+  }
+  
+  .section-subtitle {
+    @apply text-gray-400 mb-6;
+  }
+  
+  /* Remove status-related classes since verificationStatus is no longer in types.ts */
+  /* 
+  .status-verified {
+    @apply text-green-500;
+  }
+  
+  .status-pending {
+    @apply text-yellow-500;
+  }
+  
+  .status-rejected {
+    @apply text-red-500;
+  }
+  */
+  
+  /* Verify that all status-related classes are removed or commented out */
 }

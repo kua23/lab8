@@ -1,126 +1,83 @@
-import { useState, useEffect, useRef } from 'react';
-import { IdentityProof } from '../../types';
+import React, { useState } from 'react';
+import { IdentityProof } from '../../types/types';
 
 interface IdentityProofsStepProps {
-  proofs: IdentityProof[];
-  onUpdate: (proofs: IdentityProof[]) => void;
+  identityProofs: IdentityProof[];
+  onUpdate: (identityProofs: IdentityProof[]) => void;
 }
 
-const IdentityProofsStep = ({ proofs, onUpdate }: IdentityProofsStepProps) => {
-  const [proofsList, setProofsList] = useState<IdentityProof[]>(
-    proofs.length > 0 ? proofs : [{ 
-      type: '', 
-      documentNumber: '', 
-      verificationStatus: 'PENDING' 
-    }]
-  );
+const IdentityProofsStep: React.FC<IdentityProofsStepProps> = ({ identityProofs = [], onUpdate }) => {
+  // Default to empty array if identityProofs is undefined
+  const initialProofs = Array.isArray(identityProofs) && identityProofs.length > 0 
+    ? [...identityProofs] 
+    : [{ type: '', documentNumber: '' }];
+  
+  const [proofsList, setProofsList] = useState<IdentityProof[]>(initialProofs);
   
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>({});
 
-  // Add a ref to track initial render and previous proofs
-  const isInitialRender = useRef(true);
-  const prevProofsRef = useRef<IdentityProof[]>([]);
-  
-  // Check if proofs have actually changed in a meaningful way
-  const haveProofsChanged = (prev: IdentityProof[], current: IdentityProof[]): boolean => {
-    if (prev.length !== current.length) return true;
-    
-    return current.some((proof, index) => {
-      return (
-        proof.type !== prev[index]?.type ||
-        proof.documentNumber !== prev[index]?.documentNumber
-      );
-    });
-  };
-
-  // Auto-update parent component when valid proofs change
-  useEffect(() => {
-    // Skip the first render
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      prevProofsRef.current = [...proofsList];
-      return;
-    }
-    
-    // Only update if at least one proof is complete
-    const hasCompleteProof = proofsList.some(
-      proof => proof.type && proof.documentNumber
-    );
-    
-    // Only call onUpdate when proofs have actually changed and are valid
-    if (hasCompleteProof && validate() && haveProofsChanged(prevProofsRef.current, proofsList)) {
-      prevProofsRef.current = [...proofsList];
-      onUpdate(proofsList);
-    }
-  }, [proofsList]); // Removed onUpdate from dependency array
-
-  const handleChange = (index: number, field: keyof IdentityProof, value: string | IdentityProof['verificationStatus']) => {
+  const handleChange = (index: number, field: keyof IdentityProof, value: string) => {
     const updatedProofs = [...proofsList];
     updatedProofs[index] = {
       ...updatedProofs[index],
       [field]: value
     };
-    setProofsList(updatedProofs);
     
-    // Clear error when user types
     if (errors[index]?.[field]) {
       const updatedErrors = { ...errors };
       updatedErrors[index] = { ...updatedErrors[index], [field]: '' };
       setErrors(updatedErrors);
     }
+    
+    setProofsList(updatedProofs);
+    onUpdate(updatedProofs);
   };
 
   const addProof = () => {
     setProofsList([
       ...proofsList, 
-      { type: '', documentNumber: '', verificationStatus: 'PENDING' }
+      { type: '', documentNumber: '' }
     ]);
   };
 
   const removeProof = (index: number) => {
     const updatedProofs = [...proofsList];
     updatedProofs.splice(index, 1);
-    setProofsList(updatedProofs);
     
-    // Remove errors for this index
     const updatedErrors = { ...errors };
     delete updatedErrors[index];
     setErrors(updatedErrors);
     
-    // Update parent component with the removed proof
+    setProofsList(updatedProofs);
     onUpdate(updatedProofs);
   };
 
-  const validateProof = (proof: IdentityProof) => {
+  const validateProof = (proof: IdentityProof, index: number) => {
     const proofErrors: Record<string, string> = {};
     
     if (!proof.type.trim()) proofErrors.type = 'Proof type is required';
-    if (!proof.documentNumber.trim()) proofErrors.documentNumber = 'Document number is required';
+    if (!proof.documentNumber?.trim()) proofErrors.documentNumber = 'Document number is required';
     
-    return proofErrors;
+    if (Object.keys(proofErrors).length > 0) {
+      const newErrors = { ...errors };
+      newErrors[index] = proofErrors;
+      setErrors(newErrors);
+      return false;
+    }
+    
+    return true;
   };
-
-  const validate = () => {
-    const newErrors: Record<number, Record<string, string>> = {};
-    let hasErrors = false;
-    
-    proofsList.forEach((proof, index) => {
-      const proofErrors = validateProof(proof);
-      
-      if (Object.keys(proofErrors).length > 0) {
-        newErrors[index] = proofErrors;
-        hasErrors = true;
-      }
-    });
-    
-    setErrors(newErrors);
-    return !hasErrors;
+  
+  const handleBlur = (index: number) => {
+    if (validateProof(proofsList[index], index)) {
+      onUpdate(proofsList);
+    }
   };
 
   const proofTypes = [
     "Tax ID",
     "National ID",
-    "Social Security Number",
+    "Social Security Number", 
     "Birth Certificate",
     "Other"
   ];
@@ -129,14 +86,11 @@ const IdentityProofsStep = ({ proofs, onUpdate }: IdentityProofsStepProps) => {
     <div>
       <h2 className="text-2xl font-semibold mb-6 text-primary">Customer Identity Proofs</h2>
       <p className="text-gray-400 mb-6">
-        Add one or more identity proofs for verification
+        Add one or more identity proofs
       </p>
       
       {proofsList.map((proof, index) => (
-        <div 
-          key={index} 
-          className="mb-6 p-4 border border-gray-700 rounded-lg"
-        >
+        <div key={index} className="mb-6 p-4 border border-gray-700 rounded-lg">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Proof #{index + 1}</h3>
             {proofsList.length > 1 && (
@@ -156,8 +110,9 @@ const IdentityProofsStep = ({ proofs, onUpdate }: IdentityProofsStepProps) => {
                 Proof Type
               </label>
               <select
-                value={proof.type}
+                value={proof.type || ''}
                 onChange={(e) => handleChange(index, 'type', e.target.value)}
+                onBlur={() => handleBlur(index)}
                 className="form-input bg-dark-light text-white"
               >
                 <option value="">Select proof type</option>
@@ -176,33 +131,15 @@ const IdentityProofsStep = ({ proofs, onUpdate }: IdentityProofsStepProps) => {
               </label>
               <input
                 type="text"
-                value={proof.documentNumber}
+                value={proof.documentNumber || ''}
                 onChange={(e) => handleChange(index, 'documentNumber', e.target.value)}
+                onBlur={() => handleBlur(index)}
                 className="form-input"
                 placeholder="Document identification number"
               />
               {errors[index]?.documentNumber && (
                 <p className="text-red-400 text-sm mt-1">{errors[index].documentNumber}</p>
               )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Verification Status
-              </label>
-              <select
-                value={proof.verificationStatus}
-                onChange={(e) => handleChange(index, 'verificationStatus', e.target.value as IdentityProof['verificationStatus'])}
-                className="form-input bg-dark-light text-white"
-                disabled
-              >
-                <option value="PENDING">PENDING</option>
-                <option value="VERIFIED">VERIFIED</option>
-                <option value="REJECTED">REJECTED</option>
-              </select>
-              <p className="text-gray-400 text-sm mt-1">
-                Status will be updated after verification by the system
-              </p>
             </div>
           </div>
         </div>

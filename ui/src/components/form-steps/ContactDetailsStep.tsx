@@ -11,7 +11,6 @@ const ContactDetailsStep = ({ contactDetails, onUpdate }: ContactDetailsStepProp
   const [formData, setFormData] = useState<CustomerContactDetails>({
     email: contactDetails?.email || '',
     phoneNumber: contactDetails?.phoneNumber || '',
-    alternatePhoneNumber: contactDetails?.alternatePhoneNumber || '',
     preferredContactMethod: contactDetails?.preferredContactMethod || 'EMAIL'
   });
   
@@ -31,7 +30,6 @@ const ContactDetailsStep = ({ contactDetails, onUpdate }: ContactDetailsStepProp
       setFormData({
         email: contactDetails?.email || '',
         phoneNumber: contactDetails?.phoneNumber || '',
-        alternatePhoneNumber: contactDetails?.alternatePhoneNumber || '',
         preferredContactMethod: contactDetails?.preferredContactMethod || 'EMAIL'
       });
       
@@ -41,6 +39,11 @@ const ContactDetailsStep = ({ contactDetails, onUpdate }: ContactDetailsStepProp
       }, 0);
     }
   }, [contactDetails]);
+
+  const [errors, setErrors] = useState({
+    email: '',
+    phoneNumber: '',
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -52,16 +55,62 @@ const ContactDetailsStep = ({ contactDetails, onUpdate }: ContactDetailsStepProp
     
     setFormData(newFormData);
     
-    // Only update parent if we're not already updating from props
-    if (!isUpdatingFromProps.current) {
-      const updatedStr = JSON.stringify(newFormData);
-      if (updatedStr !== lastContactDetailsRef.current) {
-        lastContactDetailsRef.current = updatedStr;
-        onUpdate(newFormData);
-      }
+    // Clear error when user types
+    if (errors[name as keyof typeof errors]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+    
+    // Only send valid data to parent
+    if (isValid(newFormData)) {
+      onUpdate(newFormData);
     }
   };
+  
+  const isValid = (data: CustomerContactDetails): boolean => {
+    return !!(
+      isValidEmail(data.email) && 
+      data.phoneNumber.trim() !== ''
+    );
+  };
+  
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
+  const validate = () => {
+    const newErrors = {
+      email: '',
+      phoneNumber: '',
+    };
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    }
+    
+    setErrors(newErrors);
+    
+    const isFormValid = !Object.values(newErrors).some(error => error !== '');
+    if (isFormValid) {
+      onUpdate(formData);
+    }
+    
+    return isFormValid;
+  };
+  
+  const handleBlur = () => {
+    validate();
+  };
+  
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-6 text-primary">Contact Details</h2>
@@ -69,44 +118,38 @@ const ContactDetailsStep = ({ contactDetails, onUpdate }: ContactDetailsStepProp
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Email Address
+            Email Address*
           </label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
+            onBlur={handleBlur}
             className="form-input"
-            placeholder="email@example.com"
+            placeholder="Enter email address"
           />
+          {errors.email && (
+            <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+          )}
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Phone Number
+            Phone Number*
           </label>
           <input
             type="tel"
             name="phoneNumber"
             value={formData.phoneNumber}
             onChange={handleChange}
+            onBlur={handleBlur}
             className="form-input"
-            placeholder="555-123-4567"
+            placeholder="Enter phone number"
           />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">
-            Alternate Phone Number (Optional)
-          </label>
-          <input
-            type="tel"
-            name="alternatePhoneNumber"
-            value={formData.alternatePhoneNumber || ''}
-            onChange={handleChange}
-            className="form-input"
-            placeholder="555-123-4567"
-          />
+          {errors.phoneNumber && (
+            <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>
+          )}
         </div>
         
         <div>
@@ -117,11 +160,11 @@ const ContactDetailsStep = ({ contactDetails, onUpdate }: ContactDetailsStepProp
             name="preferredContactMethod"
             value={formData.preferredContactMethod}
             onChange={handleChange}
-            className="form-input bg-dark text-white"
+            className="form-input bg-dark-light text-white"
           >
             <option value="EMAIL">Email</option>
-            <option value="PHONE">Phone</option>
-            <option value="SMS">SMS</option>
+            <option value="PHONE">Phone Call</option>
+            <option value="SMS">SMS/Text Message</option>
           </select>
         </div>
       </div>
