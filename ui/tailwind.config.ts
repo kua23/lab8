@@ -22,7 +22,23 @@ const config: Config = {
           DEFAULT: '#1e293b', // dark slate
           light: '#334155',
           dark: '#0f172a',
+          darker: '#0b1221',
+        },
+        // Add document and proof specific colors
+        document: {
+          DEFAULT: '#0ea5e9',
+          light: '#7dd3fc',
+        },
+        proof: {
+          DEFAULT: '#8b5cf6',
+          light: '#c4b5fd',
         }
+      },
+      borderRadius: {
+        'card': '0.5rem',
+      },
+      spacing: {
+        'form-group': '1.5rem',
       },
     },
   },

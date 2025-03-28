@@ -30,6 +30,7 @@ public class CustomerController {
 
 	@PostMapping
 	public ResponseEntity<CustomerDetails> createCustomer(@RequestBody CustomerDetails newCustomerDetails) {
+		System.out.println("Creating customer...");
 		CustomerDetails savedCustomerDetails = customerService.createCustomer(newCustomerDetails);
 		return new ResponseEntity<>(savedCustomerDetails, HttpStatus.CREATED);
 	}

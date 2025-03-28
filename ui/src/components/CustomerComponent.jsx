@@ -37,7 +37,9 @@ function CustomerComponent() {
         <ul>
           {customers.map(customer => (
             <li key={customer.id}>
-              {customer.name} - {customer.email}
+              {typeof customer.name === 'string' 
+                ? customer.name
+                : `${customer.name.firstName} ${customer.name.middleName ? customer.name.middleName + ' ' : ''}${customer.name.lastName}`} - {customer.email}
             </li>
           ))}
         </ul>

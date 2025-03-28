@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router'; // Fix import from react-router to react-router-dom
-import { Customer, CustomerName } from '../types/types';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router';
+import { Customer, CustomerName, Address, IdentityDocument, IdentityProof } from '../types/types';
 import PersonalInfoStep from '../components/form-steps/PersonalInfoStep';
 import AddressStep from '../components/form-steps/AddressStep';
 import IdentityDocumentsStep from '../components/form-steps/IdentityDocumentsStep';
 import IdentityProofsStep from '../components/form-steps/IdentityProofsStep';
-import ContactDetailsStep from '../components/form-steps/ContactDetailsStep';
+// Just add the .js extension to the import
+import { customerService } from '../services/api.ts';
 
 // Initialize empty customer with proper structure
 const initialCustomer: Customer = {
@@ -20,7 +21,6 @@ const initialCustomer: Customer = {
   },
   identityDocuments: [],
   identityProofs: []
-  // contactDetails is optional in the type definition
 };
 
 const CustomerForm = () => {
@@ -28,8 +28,22 @@ const CustomerForm = () => {
   const location = useLocation();
   const [step, setStep] = useState(1);
   const [customer, setCustomer] = useState<Customer>(initialCustomer);
-  const totalSteps = 5;
-  const processedStateRef = useRef<any>(null);
+  const totalSteps = 4;
+  const processedStateRef = useRef<unknown>(null);
+  
+  // Add submit handler
+  const handleSubmit = async () => {
+    try {
+      if (customer.id) {
+        await customerService.update(customer.id, customer);
+      } else {
+        await customerService.create(customer);
+      }
+      navigate('/customers/view');
+    } catch (error) {
+      console.error('Error submitting customer data:', error);
+    }
+  };
   
   useEffect(() => {
     // Check if we're returning from preview with edits AND the state is different
@@ -65,10 +79,32 @@ const CustomerForm = () => {
     }
   }, [location]);
   
-  const updateCustomer = (data: Partial<Customer>) => {
+  const handlePersonalInfoUpdate = (data: { name: CustomerName, dateOfBirth: string }) => {
     setCustomer(prev => ({
       ...prev,
-      ...data
+      name: data.name,
+      dateOfBirth: data.dateOfBirth
+    }));
+  };
+
+  const handleAddressUpdate = (address: Address) => {
+    setCustomer(prev => ({
+      ...prev,
+      address
+    }));
+  };
+
+  const handleDocumentsUpdate = (identityDocuments: IdentityDocument[]) => {
+    setCustomer(prev => ({
+      ...prev,
+      identityDocuments
+    }));
+  };
+
+  const handleProofsUpdate = (identityProofs: IdentityProof[]) => {
+    setCustomer(prev => ({
+      ...prev,
+      identityProofs
     }));
   };
 
@@ -100,7 +136,7 @@ const CustomerForm = () => {
         Create New Customer
       </h1>
       
-      {/* Progress Bar - Updated to show 5 steps */}
+      {/* Progress Bar */}
       <div className="mb-10">
         <div className="flex justify-between mb-2">
           {[...Array(totalSteps)].map((_, i) => (
@@ -119,8 +155,7 @@ const CustomerForm = () => {
               <span className="text-xs mt-1 text-gray-400">
                 {i === 0 ? 'Personal' : 
                  i === 1 ? 'Address' : 
-                 i === 2 ? 'Contact' : 
-                 i === 3 ? 'Documents' : 'Proofs'}
+                 i === 2 ? 'Documents' : 'Proofs'}
               </span>
             </div>
           ))}
@@ -143,35 +178,28 @@ const CustomerForm = () => {
                 : customer.name as CustomerName, 
               dateOfBirth: customer.dateOfBirth 
             }}
-            onUpdate={(data) => updateCustomer(data)}
+            onUpdate={handlePersonalInfoUpdate}
           />
         )}
         
         {step === 2 && (
           <AddressStep
             address={customer.address}
-            onUpdate={(address) => updateCustomer({ address })}
+            onUpdate={handleAddressUpdate}
           />
         )}
         
         {step === 3 && (
-          <ContactDetailsStep
-            contactDetails={customer.contactDetails}
-            onUpdate={(contactDetails) => updateCustomer({ contactDetails })}
+          <IdentityDocumentsStep
+            documents={customer.identityDocuments}
+            onUpdate={handleDocumentsUpdate}
           />
         )}
         
         {step === 4 && (
-          <IdentityDocumentsStep
-            documents={customer.identityDocuments}
-            onUpdate={(identityDocuments) => updateCustomer({ identityDocuments })}
-          />
-        )}
-        
-        {step === 5 && (
           <IdentityProofsStep
-            proofs={customer.identityProofs}
-            onUpdate={(identityProofs) => updateCustomer({ identityProofs })}
+            identityProofs={customer.identityProofs}
+            onUpdate={handleProofsUpdate}
           />
         )}
         
@@ -185,12 +213,29 @@ const CustomerForm = () => {
             Previous
           </button>
           
-          <button
-            onClick={nextStep}
-            className="btn-primary"
-          >
-            {step === totalSteps ? 'Review' : 'Next'}
-          </button>
+          {step === totalSteps ? (
+            <div className="flex space-x-4">
+              <button
+                onClick={nextStep}
+                className="btn-secondary"
+              >
+                Review
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="btn-primary"
+              >
+                Submit
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={nextStep}
+              className="btn-primary"
+            >
+              Next
+            </button>
+          )}
         </div>
       </div>
     </div>

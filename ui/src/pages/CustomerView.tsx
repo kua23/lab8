@@ -109,7 +109,6 @@ const CustomerView = () => {
                 <p className="text-sm text-gray-400">Phone Number</p>
                 <p className="text-lg">{customer.contactDetails.phoneNumber}</p>
               </div>
-              {/* alternatePhoneNumber section removed as it doesn't exist in types.ts */}
               {customer.contactDetails.preferredContactMethod && (
                 <div>
                   <p className="text-sm text-gray-400">Preferred Contact Method</p>
@@ -164,7 +163,6 @@ const CustomerView = () => {
                     <p className="text-sm text-gray-400">Document Number</p>
                     <p className="text-lg">{proof.documentNumber}</p>
                   </div>
-                  {/* verificationStatus section removed as it doesn't exist in types.ts */}
                 </div>
               </div>
             ))}

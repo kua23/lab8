@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router'; // Fix import
+import { createBrowserRouter } from 'react-router'; // Fixed import from react-router to react-router-dom
 import App from './App';
 import CustomersList from './pages/CustomersList.tsx';
 import CustomerView from './pages/CustomerView.tsx';
